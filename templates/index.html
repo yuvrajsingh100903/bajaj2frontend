@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABCD123</title> <!-- Replace with your roll number -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: red;
+            font-size: 14px;
+        }
+
+        #responseContainer {
+            margin-top: 20px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        select {
+            width: 100%;
+            padding: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>JSON Input</h1>
+        <textarea id="jsonInput" placeholder='Enter JSON here...'></textarea>
+        <button onclick="submitJson()">Submit</button>
+        <p id="error" class="error"></p>
+        
+        <div id="dropdownContainer" class="hidden">
+            <label for="options">Select what to display:</label>
+            <select id="options" multiple>
+                <option value="Alphabets">Alphabets</option>
+                <option value="Numbers">Numbers</option>
+                <option value="Highest alphabet">Highest alphabet</option>
+            </select>
+        </div>
+        
+        <div id="responseContainer" class="hidden">
+            <h2>Response</h2>
+            <ul id="responseList"></ul>
+        </div>
+    </div>
+    
+    <script>
+        function submitJson() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            const errorElement = document.getElementById('error');
+            const dropdownContainer = document.getElementById('dropdownContainer');
+            const responseContainer = document.getElementById('responseContainer');
+            const responseList = document.getElementById('responseList');
+
+            try {
+                const parsedJson = JSON.parse(jsonInput);
+
+                if (!parsedJson.data) {
+                    throw new Error('Invalid JSON: Missing "data" key');
+                }
+
+                errorElement.textContent = '';
+                fetch('/bfhl', { // Adjusted URL to be relative
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(parsedJson)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    dropdownContainer.classList.remove('hidden');
+                    responseContainer.classList.remove('hidden');
+                    responseList.innerHTML = ''; // Clear previous response
+
+                    document.getElementById('options').addEventListener('change', function () {
+                        const selectedOptions = Array.from(this.selectedOptions).map(option => option.value);
+                        renderResponse(data, selectedOptions);
+                    });
+                })
+                .catch(error => {
+                    errorElement.textContent = 'Error fetching API: ' + error.message;
+                });
+            } catch (e) {
+                errorElement.textContent = 'Invalid JSON format. Please correct it and try again.';
+            }
+        }
+
+        function renderResponse(response, selectedOptions) {
+            const responseList = document.getElementById('responseList');
+            responseList.innerHTML = '';
+
+            if (selectedOptions.includes('Alphabets')) {
+                const li = document.createElement('li');
+                li.textContent = 'Alphabets: ' + response.alphabets.join(', ');
+                responseList.appendChild(li);
+            }
+
+            if (selectedOptions.includes('Numbers')) {
+                const li = document.createElement('li');
+                li.textContent = 'Numbers: ' + response.numbers.join(', ');
+                responseList.appendChild(li);
+            }
+
+            if (selectedOptions.includes('Highest alphabet') && response.highest_alphabet.length > 0) {
+                const li = document.createElement('li');
+                li.textContent = 'Highest Alphabet: ' + response.highest_alphabet[0];
+                responseList.appendChild(li);
+            }
+        }
+    </script>
+</body>
+</html>
